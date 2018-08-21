@@ -86,11 +86,15 @@ def post_comment_with_shiritori(movie_id, comment):
     print("last comment : {0}".format(last_comment))
     print("your comment : {0}".format(comment))
 
-    
     if last_comment == "*":
         print("----- しりとり開始 -----")
         return post_comment(movie_id, comment)
-    elif text2kana(last_comment)[-1] != text2kana(comment)[0]:
+    
+    tail = text2kana(last_comment)[-1]
+    head = text2kana(comment)[0]
+    tail = small2big_kana(tail)
+    
+    if tail != head:
         print("----- しりとり不成立 -----")
         return None
     else:
@@ -111,6 +115,28 @@ def text2kana(string):
             text.append(node.feature.split(",")[7])
         node = node.next
     return "".join(text)
+
+def small2big_kana(kana):
+    if kana == "ァ":
+        kana = "ア"
+    elif kana == "ィ":
+        kana = "イ"
+    elif kana == "ゥ":
+        kana = "ウ"
+    elif kana == "ェ":
+        kana = "エ"
+    elif kana == "ォ":
+        kana = "オ"
+    elif kana == "ャ":
+        kana = "ヤ"
+    elif kana == "ュ":
+        kana = "ユ"
+    elif kana == "ョ":
+        kana = "ヨ"
+    else:
+        pass
+    return kana
+
 
 @app.route('/')
 def index():
@@ -148,8 +174,10 @@ def confirm():
         title = "*"
         comment_count = "*"
         last_comment = "*"
+
+    iframe = '<iframe src="https://twitcasting.tv/{0}/embeddedplayer/live?auto_play=true&default_mute=true" width="640px" height="360px" frameborder="0" allowfullscreen></iframe>'.format(info.user_name)
             
-    return render_template("confirm.html", user_name=info.user_name, message=message, title=title, comment_count=comment_count, last_comment=last_comment)
+    return render_template("confirm.html", user_name=info.user_name, message=message, title=title, comment_count=comment_count, last_comment=last_comment, iframe=iframe)
 
 @app.route('/sent', methods = ['POST'])
 def sent():
