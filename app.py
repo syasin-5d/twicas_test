@@ -1,7 +1,7 @@
 import webbrowser
 import requests
 import json
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for
 
 app = Flask(__name__)
 base_url = "https://apiv2.twitcasting.tv"
@@ -45,11 +45,11 @@ def get_headers():
 
 
 def get_current_movie_info_from_user_id(user_id):
-    r = requests.get(base_url + "/users/{user_id}".format(user_id=user_id), headers=headers)
+    r = requests.get(base_url + "/users/{user_id}".format(user_id=user_id), headers=Credentials.headers)
     data = json.loads(r.text)
     if data['user']['is_live']:
         print('living...')
-        r = requests.get(base_url + "/users/{user_id}/current_live".format(user_id=user_id), headers=headers)
+        r = requests.get(base_url + "/users/{user_id}/current_live".format(user_id=user_id), headers=Credentials.headers)
         current_live = json.loads(r.text)
         return current_live['movie']
     else:
@@ -57,7 +57,7 @@ def get_current_movie_info_from_user_id(user_id):
         return None
 
 def get_last_comment(movie_id):
-    r = requests.get(base_url + "/movies/{movie_id}/comments".format(movie_id=movie_id), headers=headers, params={'limit' : 1})
+    r = requests.get(base_url + "/movies/{movie_id}/comments".format(movie_id=movie_id), headers=Credentials.headers, params={'limit' : 1})
     res = json.loads(r.text)
     if res['all_count'] == 0:
         print("no comments.")
@@ -70,7 +70,7 @@ def post_comment(movie_id, comment):
     params = {
          'comment' : comment
     }
-    r = requests.post(base_url + "/movies/{movie_id}/comments".format(movie_id=movie_id), headers=headers, data=json.dumps(params))
+    r = requests.post(base_url + "/movies/{movie_id}/comments".format(movie_id=movie_id), headers=Credentials.headers, data=json.dumps(params))
     res = json.loads(r.text)
     return res
 
@@ -110,17 +110,63 @@ def text2kana(string):
 
 @app.route('/')
 def index():
-    # 「templates/index.html」のテンプレートを使う
-    # 「message」という変数に"Hello"と代入した状態で、テンプレート内で使う
     code = request.args.get('code', '')
-    Credentials.code = code
-    get_headers()
-    return render_template('index.html', message="ok")
+    if code != '':
+        Credentials.code = code
+        get_headers()
+        message = "ok"
+        return redirect(url_for('form'))
+    else:
+        message="ng"
+    return render_template('index.html', message=message)
 
 @app.route('/test')
 def test():
     return render_template('test.html', message="test")
 
+@app.route('/form')
+def form():
+    return render_template('form.html')
+
+@app.route('/confirm', methods = ['POST', 'GET'])
+def confirm():
+    if request.method == 'POST':
+        user_name = request.form['user_name']
+        movie_info = get_current_movie_info_from_user_id(user_name)
+        if movie_info is not None:
+            message = "放送してるよ"
+            title = movie_info['title']
+            comment_count = movie_info['comment_count']
+            last_comment = get_last_comment(movie_info['id'])
+        else:
+            message = "放送してないよ"
+            title = "*"
+            comment_count = "*"
+            last_comment = "*"
+            
+        return render_template("confirm.html", user_name=user_name, message=message, title=title, comment_count=comment_count, last_comment=last_comment)
+
+
+"""
+URLを変数でも指定できるが、よく分かってないんで当分はconfirmのほうを使いそう
+"""    
+@app.route('/<user_name>', methods = ['POST', 'GET'])
+def user_name(user_name):
+    movie_info = get_current_movie_info_from_user_id(user_name)
+    if movie_info is not None:
+        message = "放送してるよ"
+        title = movie_info['title']
+        comment_count = movie_info['comment_count']
+        last_comment = get_last_comment(movie_info['id'])
+    else:
+        message = "放送してないよ"
+        title = "*"
+        comment_count = "*"
+        last_comment = "*"
+
+    return render_template("confirm.html", user_name=user_name, message=message, title=title, comment_count=comment_count, last_comment=last_comment)
+
+    
 
 if __name__ == "__main__":
     get_oauth()
