@@ -90,10 +90,10 @@ def post_comment_with_shiritori(movie_id, comment):
         print("----- しりとり開始 -----")
         return post_comment(movie_id, comment)
     
-    tail = text2kana(last_comment)[-1]
-    head = text2kana(comment)[0]
-    tail = small2big_kana(tail)
-    
+    last_comment_kana = text2kana(last_comment)
+    comment_kana = text2kana(comment)
+    tail = get_tail(last_comment_kana)
+    head = comment_kana[0]
     if tail != head:
         print("----- しりとり不成立 -----")
         return None
@@ -116,26 +116,15 @@ def text2kana(string):
         node = node.next
     return "".join(text)
 
-def small2big_kana(kana):
-    if kana == "ァ":
-        kana = "ア"
-    elif kana == "ィ":
-        kana = "イ"
-    elif kana == "ゥ":
-        kana = "ウ"
-    elif kana == "ェ":
-        kana = "エ"
-    elif kana == "ォ":
-        kana = "オ"
-    elif kana == "ャ":
-        kana = "ヤ"
-    elif kana == "ュ":
-        kana = "ユ"
-    elif kana == "ョ":
-        kana = "ヨ"
-    else:
-        pass
-    return kana
+def get_tail(text):
+    import re
+    for i in range(1,len(text)+1):
+        print(text[-i])
+        if re.match("ァ|ィ|ゥ|ェ|ォ|ャ|ュ|ョ|ー|-",text[-i]):
+            continue
+        else:
+            return text[-i]
+    return "*"
 
 
 @app.route('/')
