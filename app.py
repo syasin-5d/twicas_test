@@ -5,6 +5,10 @@ from flask import Flask, render_template, request, redirect, url_for
 
 app = Flask(__name__)
 base_url = "https://apiv2.twitcasting.tv"
+class info:
+    user_name=""
+    movie_id=""
+
 
 class Credentials:
     # APIキーの指定
@@ -131,25 +135,40 @@ def form():
 @app.route('/confirm', methods = ['POST', 'GET'])
 def confirm():
     if request.method == 'POST':
-        user_name = request.form['user_name']
-        movie_info = get_current_movie_info_from_user_id(user_name)
-        if movie_info is not None:
-            message = "放送してるよ"
-            title = movie_info['title']
-            comment_count = movie_info['comment_count']
-            last_comment = get_last_comment(movie_info['id'])
-        else:
-            message = "放送してないよ"
-            title = "*"
-            comment_count = "*"
-            last_comment = "*"
+        info.user_name = request.form['user_name']
+    movie_info = get_current_movie_info_from_user_id(info.user_name)
+    if movie_info is not None:
+        message = "放送してるよ"
+        info.movie_id = movie_info['id']            
+        title = movie_info['title']
+        comment_count = movie_info['comment_count']
+        last_comment = get_last_comment(info.movie_id)
+    else:
+        message = "放送してないよ"
+        title = "*"
+        comment_count = "*"
+        last_comment = "*"
             
-        return render_template("confirm.html", user_name=user_name, message=message, title=title, comment_count=comment_count, last_comment=last_comment)
+    return render_template("confirm.html", user_name=info.user_name, message=message, title=title, comment_count=comment_count, last_comment=last_comment)
 
+@app.route('/sent', methods = ['POST'])
+def sent():
+    comment = request.form['comment']
+    last_comment = get_last_comment(info.movie_id)
+    res = post_comment_with_shiritori(info.movie_id, comment)
+    if res is not None:
+        result = "しりとり成立"
+    else:
+        result = "しりとり不成立"
+    return render_template("sent.html", result=result, comment=comment, last_comment=last_comment)
+    
+
+    
 
 """
 URLを変数でも指定できるが、よく分かってないんで当分はconfirmのほうを使いそう
-"""    
+"""
+"""
 @app.route('/<user_name>', methods = ['POST', 'GET'])
 def user_name(user_name):
     movie_info = get_current_movie_info_from_user_id(user_name)
@@ -165,8 +184,7 @@ def user_name(user_name):
         last_comment = "*"
 
     return render_template("confirm.html", user_name=user_name, message=message, title=title, comment_count=comment_count, last_comment=last_comment)
-
-    
+"""
 
 if __name__ == "__main__":
     get_oauth()
