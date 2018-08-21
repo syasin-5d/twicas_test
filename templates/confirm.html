@@ -8,11 +8,13 @@
             <th>title</th>
             <th>comment_count</th>
             <th>last_comment</th>
+            <th>末尾判定文字</th>
         </tr>
         <tr>
             <td>{{ title }}</td>
             <td>{{ comment_count }}</td>
             <td>{{ last_comment }}</td>
+            <td>{{ char_for_next_chain }}</td>
         </tr>
     </table>
     <form action="sent" method="POST">

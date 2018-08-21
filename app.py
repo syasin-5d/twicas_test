@@ -152,12 +152,13 @@ def confirm():
     if request.method == 'POST':
         info.user_name = request.form['user_name']
     movie_info = get_current_movie_info_from_user_id(info.user_name)
-    if movie_info is not None:
+    if movie_info:
         message = "放送してるよ"
         info.movie_id = movie_info['id']            
         title = movie_info['title']
         comment_count = movie_info['comment_count']
         last_comment = get_last_comment(info.movie_id)
+        char_for_next_chain = get_tail(text2kana(last_comment))
     else:
         message = "放送してないよ"
         title = "*"
@@ -166,7 +167,7 @@ def confirm():
 
     iframe = '<iframe src="https://twitcasting.tv/{0}/embeddedplayer/live?auto_play=true&default_mute=true" width="640px" height="360px" frameborder="0" allowfullscreen></iframe>'.format(info.user_name)
             
-    return render_template("confirm.html", user_name=info.user_name, message=message, title=title, comment_count=comment_count, last_comment=last_comment, iframe=iframe)
+    return render_template("confirm.html", user_name=info.user_name, message=message, title=title, comment_count=comment_count, last_comment=last_comment, iframe=iframe, char_for_next_chain=char_for_next_chain)
 
 @app.route('/sent', methods = ['POST'])
 def sent():
